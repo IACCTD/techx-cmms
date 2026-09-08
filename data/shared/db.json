@@ -1,1 +1,36 @@
-
+{
+  "meta": {
+    "site": "IAC Cottondale, AL",
+    "publishedAt": "2026-09-08T00:00:00.000Z",
+    "publishedBy": "Marcelo Frazzato",
+    "note": "Master copy. Edit through the app, then commit this file."
+  },
+  "assets": [
+    { "id": "3526", "name": "Top Roll Assembly", "manufacturer": "3Con", "project": "3527", "location": "Ultrasonic weld cell", "status": "Active", "notes": "Ultrasonic sonotrode weld cell" },
+    { "id": "3527", "name": "Air Compressor #1", "manufacturer": "Atlas Copco", "project": "", "location": "Utilities room", "status": "Active", "notes": "" }
+  ],
+  "pms": [
+    { "id": "PM-003", "assetId": "3526", "description": "Inspect and clean sonotrodes/anvils; check ultrasonic weld quality and tighten stack hardware", "frequency": "weekly", "nextDue": "2026-09-10", "lastDone": "", "tech": "" },
+    { "id": "PM-004", "assetId": "3526", "description": "Clean/replace main air supply filters and moisture separators; verify regulator settings", "frequency": "monthly", "nextDue": "2026-10-03", "lastDone": "", "tech": "" },
+    { "id": "PM-005", "assetId": "3526", "description": "Lubricate sliding and rotating components; check air-line lubricator drip", "frequency": "monthly", "nextDue": "2026-10-03", "lastDone": "", "tech": "" },
+    { "id": "PM-006", "assetId": "3526", "description": "Clean photo-eyes/sensors and air blow-off nozzles; verify nest cleaning function", "frequency": "monthly", "nextDue": "2026-10-03", "lastDone": "", "tech": "" },
+    { "id": "PM-007", "assetId": "3526", "description": "Inspect ultrasonic generators and tightening controller; verify fault-free operation", "frequency": "quarterly", "nextDue": "2026-12-03", "lastDone": "", "tech": "" },
+    { "id": "PM-008", "assetId": "3526", "description": "Inspect guarding, safety interlocks, E-stops and light curtains; confirm no air leaks", "frequency": "quarterly", "nextDue": "2026-12-03", "lastDone": "", "tech": "" },
+    { "id": "PM-009", "assetId": "3526", "description": "Back up PLC/servo programs; review hour-meter counters and inspect servo drives", "frequency": "annually", "nextDue": "2027-09-03", "lastDone": "", "tech": "" }
+  ],
+  "parts": [
+    { "id": "CT_12672", "description": "Sonotrode", "assetId": "3526", "mfrPn": "6821000797", "vendor": "3CON", "location": "SP1-I2-B5" },
+    { "id": "CT_12673", "description": "Sonotrode", "assetId": "3526", "mfrPn": "6841000758", "vendor": "3CON", "location": "SP1-I2-B4" },
+    { "id": "CT_1710", "description": "Ultrasonic generator", "assetId": "3526", "mfrPn": "88194", "vendor": "HERRMANN", "location": "SP1-E3-B22" },
+    { "id": "CT_13166", "description": "Power Focus 6000 tightening controller", "assetId": "3526", "mfrPn": "8436095010", "vendor": "ATLAS COPCO", "location": "SP1-H2-B3" },
+    { "id": "CT_10591", "description": "SIMATIC ET 200SP analog input module", "assetId": "3526", "mfrPn": "6ES7134-6GF00-0AA1", "vendor": "SIEMENS", "location": "SP1-E3-A11" },
+    { "id": "CT_1707", "description": "SIMATIC ET 200SP digital input module", "assetId": "3526", "mfrPn": "6ES7131-6BF01-0BA0", "vendor": "SIEMENS", "location": "SP1-E3-A5" },
+    { "id": "CT_1708", "description": "SIMATIC ET 200SP digital output module", "assetId": "3526", "mfrPn": "6ES7132-6BH01-0BA0", "vendor": "SIEMENS", "location": "SP1-E3-A4" },
+    { "id": "CT_1709", "description": "SIMATIC ET 200SP digital output module", "assetId": "3526", "mfrPn": "6ES7132-6BF01-0BA0", "vendor": "SIEMENS", "location": "SP1-E3-A6" },
+    { "id": "CT_1711", "description": "SIMATIC ET 200SP BaseUnit BU15-P16+A10+2D", "assetId": "3526", "mfrPn": "6ES7193-6BP20-0DA0", "vendor": "SIEMENS", "location": "SP1-E3-A3" },
+    { "id": "P-1001", "description": "Compressor oil filter", "assetId": "3527", "mfrPn": "GRA-4471", "vendor": "Grainger", "location": "SP1-A1-B2", "qty": "12", "min": "5", "max": "20", "cost": "38.50" }
+  ],
+  "wos": [
+    { "id": "WO-1001", "assetId": "3526", "description": "Oil leak at compressor head", "type": "Repair", "priority": "High", "requestedBy": "Chris Myers", "assignedTo": "John Davis", "dateRequested": "2026-09-01", "dateStarted": "2026-09-02", "hours": "4.0", "cost": "450", "status": "In Progress", "cause": "To be determined" }
+  ]
+}
