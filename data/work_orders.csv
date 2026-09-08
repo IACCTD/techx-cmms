@@ -1,0 +1,2 @@
+Work Order Number,Asset ID,Description,Work Type,Priority,Requested By,Assigned To,Request Date,Date Started,Date Completed,Labor Hours,Cost,Cause of Failure,Parts Needed,Status
+WO-1001,3526,Oil leak at compressor head,Repair,High,Chris Myers,John Davis,2026-09-01,2026-09-02,,4.0,450,,,In Progress
