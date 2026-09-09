@@ -30,14 +30,10 @@ const DB = (() => {
   }
 
   function save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(cache));
-    } catch (e) {
-      alert('Could not save — browser storage may be full.');
-    }
+    try { localStorage.setItem(KEY, JSON.stringify(cache)); }
+    catch (e) { alert('Could not save — browser storage may be full.'); }
   }
 
-  /* ---------- id helpers ---------- */
   function nextId(collection, prefix, pad = 4) {
     const nums = load()[collection]
       .map(r => String(r.id || ''))
@@ -47,7 +43,6 @@ const DB = (() => {
     return prefix + String(n).padStart(pad, '0');
   }
 
-  /* ---------- generic CRUD ---------- */
   function all(c) { return load()[c].slice(); }
   function get(c, id) { return load()[c].find(r => r.id === id) || null; }
 
@@ -88,16 +83,12 @@ const DB = (() => {
   function reset() { cache = structuredClone(EMPTY); save(); }
   function raw() { return load(); }
 
-  /* ---------- recently viewed assets ---------- */
   function touchAsset(id) {
     const db = load();
-    db.meta.recentAssets = [id].concat(
-      (db.meta.recentAssets || []).filter(x => x !== id)
-    ).slice(0, 6);
+    db.meta.recentAssets = [id].concat((db.meta.recentAssets || []).filter(x => x !== id)).slice(0, 6);
     save();
   }
 
-  /* ---------- domain helpers ---------- */
   const FREQ_DAYS = {
     daily: 1, weekly: 7, biweekly: 14, monthly: 30,
     quarterly: 91, semiannual: 182, annually: 365
@@ -140,20 +131,12 @@ const DB = (() => {
     return { label: 'In stock', cls: 'c-done' };
   }
 
-  /* ---------- work order helpers ---------- */
   const OPEN_STATES = ['Open', 'On Hold'];
   const isOpen = w => OPEN_STATES.includes(w.status || 'Open');
   const isActive = w => !['Completed', 'Cancelled'].includes(w.status || 'Open');
   const isDone = w => (w.status || '') === 'Completed';
-
-  /* The date a work order belongs on in a calendar */
-  function woDate(w) {
-    return w.dateDue || w.dateCompleted || w.dateRequested || '';
-  }
-
-  function forAsset(c, assetId) {
-    return all(c).filter(r => r.assetId === assetId);
-  }
+  const woDate = w => w.dateDue || w.dateCompleted || w.dateRequested || '';
+  const forAsset = (c, assetId) => all(c).filter(r => r.assetId === assetId);
 
   return {
     all, get, upsert, remove, bulkUpsert, replaceAll, reset, raw, save,
@@ -162,7 +145,6 @@ const DB = (() => {
   };
 })();
 
-/* ---------- backup / restore ---------- */
 const Backup = {
   export() {
     const blob = new Blob([JSON.stringify(DB.raw(), null, 2)], { type: 'application/json' });

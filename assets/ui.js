@@ -7,10 +7,10 @@ function esc(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-/* Safe for use inside a single-quoted JS string that itself sits inside a
-   double-quoted HTML attribute, e.g. onclick="fn('<here>')".
-   Escapes for JS first, then for HTML — without the HTML pass a quote or
-   angle bracket in an ID would break out of the attribute. */
+
+/* Safe inside a single-quoted JS string that sits inside a double-quoted
+   HTML attribute: onclick="fn('<here>')". Escapes for JS then for HTML —
+   without the HTML pass, a quote in an ID escapes the attribute. */
 function jsq(s) {
   return esc(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
 }
@@ -42,7 +42,6 @@ const Modal = {
 };
 document.addEventListener('keydown', e => { if (e.key === 'Escape') Modal.close(); });
 
-/* ---------- form field builders ---------- */
 const F = {
   text(name, label, val, opts = {}) {
     return `<label class="${opts.required ? 'req' : ''}" for="f_${name}">${esc(label)}</label>
@@ -80,26 +79,24 @@ const F = {
 
 function assetOptions() {
   return [{ v: '', t: '— none —' }].concat(
-    DB.all('assets').map(a => ({ v: a.id, t: a.id + ' · ' + a.name }))
-  );
+    DB.all('assets').map(a => ({ v: a.id, t: a.id + ' · ' + a.name })));
 }
 
-/* ---------- table renderer ---------- */
 function renderTable(cols, rows, opts = {}) {
   if (!rows.length) return `<div class="empty">${esc(opts.empty || 'Nothing here yet.')}</div>`;
   const head = cols.map(c => `<th${c.num ? ' style="text-align:right"' : ''}>${esc(c.label)}</th>`).join('');
   const body = rows.map((r, i) => {
     const tds = cols.map(c => {
       const v = c.render ? c.render(r, i) : esc(r[c.key] ?? '');
-      return `<td class="${c.num ? 'num' : ''}">${v}</td>`;
+      return `<td class="${c.num ? 'num' : ''}"${c.hideSm ? ' data-sm="hide"' : ''}>${v}</td>`;
     }).join('');
     const click = opts.onRow ? ` class="clk" onclick="${opts.onRow}('${jsq(r.id)}')"` : '';
     return `<tr${click}>${tds}</tr>`;
   }).join('');
-  return `<div class="tablewrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  const headCells = cols.map(c => `<th${c.num ? ' style="text-align:right"' : ''}${c.hideSm ? ' data-sm="hide"' : ''}>${esc(c.label)}</th>`).join('');
+  return `<div class="tablewrap"><table><thead><tr>${headCells}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
-/* ---------- misc ---------- */
 function fmtDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso + (String(iso).length === 10 ? 'T00:00:00' : ''));
@@ -112,3 +109,24 @@ function money(v) {
 }
 function today() { return new Date().toISOString().slice(0, 10); }
 function confirmDelete(msg, fn) { if (confirm(msg)) fn(); }
+
+/* ---------- QR helpers ---------- */
+
+/* The base URL this app is served from, without the #hash.
+   Everything is derived at runtime, so QR codes are correct on
+   localhost, on a preview deploy, and on production — nothing to
+   configure and nothing to rebuild when the domain changes. */
+function appBaseUrl() {
+  const o = location.origin;
+  if (!o || o === 'null') return '';        // opened as file://
+  return o + location.pathname.replace(/index\.html$/, '');
+}
+
+function assetUrl(id) {
+  return appBaseUrl() + '#/asset/' + encodeURIComponent(id);
+}
+
+function qrSvg(text, px) {
+  try { return QR.toSVG(text, { size: px || 150 }); }
+  catch (e) { return `<div class="empty">QR too long</div>`; }
+}

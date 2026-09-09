@@ -10,12 +10,13 @@ const CAUSES = ['To be determined', 'Wear / end of life', 'Seal failure', 'Loose
   'Contamination', 'Operator damage', 'Electrical fault', 'Software / program', 'Unknown'];
 
 let SEARCH = '';
-let WO_VIEW = 'list';                 // 'list' | 'calendar'
-let WO_FILTER = 'all';                // all | open | progress | done
+let WO_VIEW = 'list';
+let WO_FILTER = 'all';
 let CAL = { y: new Date().getFullYear(), m: new Date().getMonth(), pms: true };
+let QR_SEL = null;   // null = all assets on the tag sheet
 
 /* ============================================================
-   ROUTER  —  supports #/asset/3526
+   ROUTER
    ============================================================ */
 const ROUTES = {
   home: renderHome,
@@ -25,6 +26,7 @@ const ROUTES = {
   pm: renderPM,
   parts: renderParts,
   wo: renderWO,
+  qr: renderQR,
   import: renderImport,
   settings: renderSettings
 };
@@ -59,7 +61,7 @@ function matches(obj, fields) {
 function openAsset(id) { location.hash = '#/asset/' + encodeURIComponent(id); }
 
 /* ============================================================
-   HOME  — the hub
+   HOME
    ============================================================ */
 function renderHome() {
   const assets = DB.all('assets');
@@ -69,9 +71,7 @@ function renderHome() {
   const openWos = wos.filter(DB.isOpen);
   const progWos = wos.filter(w => w.status === 'In Progress');
   const duePms = pms.filter(p => { const d = DB.daysUntil(p.nextDue); return d !== null && d <= 7; });
-
-  const recent = (DB.raw().meta.recentAssets || [])
-    .map(id => DB.get('assets', id)).filter(Boolean);
+  const recent = (DB.raw().meta.recentAssets || []).map(id => DB.get('assets', id)).filter(Boolean);
 
   if (!assets.length && !wos.length) {
     return `<h1 class="page">Welcome to Tech X</h1>
@@ -96,7 +96,7 @@ function renderHome() {
     <a class="tile" href="#/assets">
       <div class="ic">&#128451;</div>
       <h2>Find an Asset</h2>
-      <p>Search the plant by name or asset number, then open its dashboard.</p>
+      <p>Search the plant by name or asset number, or scan the QR tag on the machine.</p>
       <ul>
         <li>Asset name / serial number</li>
         <li>Recent repairs and work orders</li>
@@ -119,9 +119,7 @@ function renderHome() {
       <div class="ic">&#129302;</div>
       <h2>AI Assist</h2>
       <p>Troubleshooting, fault, cause and corrective action — reserved for a later phase.</p>
-      <ul>
-        <li>Not connected yet</li>
-      </ul>
+      <ul><li>Not connected yet</li></ul>
     </div>
   </div>
 
@@ -151,7 +149,7 @@ function renderHome() {
       <button class="btn filled" onclick="editWO()">&#43; New work order</button>
       <button class="btn out" onclick="editAsset()">&#43; New asset</button>
       <a class="btn out" href="#/wo">Work order calendar</a>
-      <a class="btn out" href="#/import">Import CSV</a>
+      <a class="btn out" href="#/qr">Print QR tags</a>
     </div>
   </div>`;
 }
@@ -221,7 +219,7 @@ function renderDashboard() {
       { label: 'Location', render: r => `<span class="mono">${esc(r.location || '—')}</span>` },
       { label: 'On hand', num: true, render: r => esc(r.qty) },
       { label: 'Min', num: true, render: r => esc(r.min) },
-      { label: 'Vendor', key: 'vendor' }
+      { label: 'Vendor', key: 'vendor', hideSm: true }
     ], lowParts, { onRow: 'editPart' })}
   </div>` : ''}
 
@@ -250,7 +248,7 @@ function statusChip(s) {
 }
 
 /* ============================================================
-   ASSETS — list
+   ASSETS
    ============================================================ */
 function renderAssets() {
   const rows = DB.all('assets').filter(a =>
@@ -258,10 +256,11 @@ function renderAssets() {
 
   return `
   <h1 class="page">Assets</h1>
-  <p class="sub">${rows.length} asset${rows.length === 1 ? '' : 's'}${SEARCH ? ` matching “${esc(SEARCH)}”` : ' in the register'} — click a row to open its dashboard</p>
+  <p class="sub">${rows.length} asset${rows.length === 1 ? '' : 's'}${SEARCH ? ` matching “${esc(SEARCH)}”` : ' in the register'} — tap a row to open its dashboard</p>
 
   <div class="chipset">
     <button class="btn filled" onclick="editAsset()">&#43; New asset</button>
+    <a class="btn out" href="#/qr">QR tags</a>
     <button class="btn out" onclick="exportCSV('assets')">Export CSV</button>
     <a class="btn out" href="#/import">Import CSV</a>
   </div>
@@ -271,20 +270,20 @@ function renderAssets() {
     ${renderTable([
       { label: 'Asset ID', render: r => `<b class="mono">${esc(r.id)}</b>` },
       { label: 'Equipment name', render: r => `<b>${esc(r.name || '—')}</b>${r.location ? `<br><small style="color:var(--muted)">${esc(r.location)}</small>` : ''}` },
-      { label: 'Manufacturer', key: 'manufacturer' },
+      { label: 'Manufacturer', key: 'manufacturer', hideSm: true },
       { label: 'Status', render: r => `<span class="chip ${r.status === 'Down' ? 'c-crit' : r.status === 'Retired' ? 'c-hold' : 'c-done'}">${esc(r.status || 'Active')}</span>` },
       { label: 'Open WOs', num: true, render: r => {
           const n = DB.forAsset('wos', r.id).filter(DB.isActive).length;
           return n ? `<b style="color:var(--bad)">${n}</b>` : '0'; } },
-      { label: 'PMs', num: true, render: r => DB.forAsset('pms', r.id).length },
-      { label: 'Parts', num: true, render: r => DB.forAsset('parts', r.id).length },
-      { label: '', render: r => `<button class="btn out sm" onclick="event.stopPropagation();editAsset('${jsq(r.id)}')">Edit</button>` }
+      { label: 'PMs', num: true, hideSm: true, render: r => DB.forAsset('pms', r.id).length },
+      { label: 'Parts', num: true, hideSm: true, render: r => DB.forAsset('parts', r.id).length },
+      { label: '', hideSm: true, render: r => `<button class="btn out sm" onclick="event.stopPropagation();editAsset('${jsq(r.id)}')">Edit</button>` }
     ], rows, { empty: SEARCH ? 'No assets match that search.' : 'No assets yet — add one or import a CSV.', onRow: 'openAsset' })}
   </div>`;
 }
 
 /* ============================================================
-   ASSET DETAIL — the per-machine dashboard
+   ASSET DETAIL
    ============================================================ */
 function renderAssetDetail(id) {
   const a = DB.get('assets', id);
@@ -303,11 +302,8 @@ function renderAssetDetail(id) {
   const prog = wos.filter(w => w.status === 'In Progress');
   const done = wos.filter(DB.isDone);
   const incoming = pms.filter(p => { const d = DB.daysUntil(p.nextDue); return d !== null && d >= 0 && d <= 30; });
-
   const recentRepairs = done
-    .sort((x, y) => (y.dateCompleted || '').localeCompare(x.dateCompleted || ''))
-    .slice(0, 5);
-
+    .sort((x, y) => (y.dateCompleted || '').localeCompare(x.dateCompleted || '')).slice(0, 5);
   const lowParts = parts.filter(p => DB.partStatus(p).label === 'Low stock').length;
 
   return `
@@ -326,10 +322,15 @@ function renderAssetDetail(id) {
         ${a.project ? ' · Project ' + esc(a.project) : ''}
       </div>
       ${a.notes ? `<div class="note" style="margin-top:12px">${esc(a.notes)}</div>` : ''}
+      <div style="margin-top:12px">
+        <span class="chip ${a.status === 'Down' ? 'c-crit' : a.status === 'Retired' ? 'c-hold' : 'c-done'}"
+          style="font-size:13px;padding:8px 14px">${esc(a.status || 'Active')}</span>
+      </div>
     </div>
-    <div>
-      <span class="chip ${a.status === 'Down' ? 'c-crit' : a.status === 'Retired' ? 'c-hold' : 'c-done'}"
-        style="font-size:13px;padding:8px 14px">${esc(a.status || 'Active')}</span>
+    <div class="qrbox hide-print">
+      ${qrSvg(assetUrl(a.id), 116)}
+      <small>Scan to open</small>
+      <button class="btn out sm" style="margin-top:8px" onclick="showQR('${jsq(a.id)}')">Tag</button>
     </div>
   </div>
 
@@ -361,7 +362,7 @@ function renderAssetDetail(id) {
         { label: 'WO', render: r => `<b class="mono">${esc(r.id)}</b>` },
         { label: 'Work done', render: r => `<b>${esc(r.description || '—')}</b><br><small style="color:var(--muted)">${esc(r.cause || 'No cause recorded')}</small>` },
         { label: 'Completed', render: r => fmtDate(r.dateCompleted) },
-        { label: 'Hrs', num: true, render: r => r.hours ?? '—' }
+        { label: 'Hrs', num: true, hideSm: true, render: r => r.hours ?? '—' }
       ], recentRepairs, { empty: 'No completed repairs on this asset yet.', onRow: 'editWO' })}
     </div>
 
@@ -383,8 +384,8 @@ function renderAssetDetail(id) {
       { label: 'Task', render: r => `<b>${esc(r.description || '—')}</b>` },
       { label: 'Frequency', render: r => `<span class="chip c-open">${esc(r.frequency || '—')}</span>` },
       { label: 'Next due', render: r => dueChip(r.nextDue) },
-      { label: 'Last done', render: r => fmtDate(r.lastDone) },
-      { label: 'Technician', render: r => r.tech ? esc(r.tech) : '<span style="color:var(--muted)">Unassigned</span>' },
+      { label: 'Last done', hideSm: true, render: r => fmtDate(r.lastDone) },
+      { label: 'Technician', hideSm: true, render: r => r.tech ? esc(r.tech) : '<span style="color:var(--muted)">Unassigned</span>' },
       { label: '', render: r => `<button class="btn tonal sm" onclick="event.stopPropagation();genWO('${jsq(r.id)}')">Generate WO</button>
         <button class="btn out sm" onclick="event.stopPropagation();completePM('${jsq(r.id)}')">Mark done</button>` }
     ], pms.sort((x, y) => (x.nextDue || '9999').localeCompare(y.nextDue || '9999')),
@@ -396,12 +397,12 @@ function renderAssetDetail(id) {
     ${renderTable([
       { label: 'Part number', render: r => `<b class="mono">${esc(r.id)}</b>` },
       { label: 'Description', key: 'description' },
-      { label: 'Mfr P/N', render: r => `<span class="mono">${esc(r.mfrPn || '—')}</span>` },
-      { label: 'Vendor', key: 'vendor' },
+      { label: 'Mfr P/N', hideSm: true, render: r => `<span class="mono">${esc(r.mfrPn || '—')}</span>` },
+      { label: 'Vendor', key: 'vendor', hideSm: true },
       { label: 'Bin location', render: r => `<span class="mono">${esc(r.location || '—')}</span>` },
       { label: 'On hand', num: true, render: r => r.qty ?? '—' },
       { label: 'Status', render: r => { const s = DB.partStatus(r); return `<span class="chip ${s.cls}">${s.label}</span>`; } },
-      { label: 'Info', render: r => {
+      { label: 'Info', hideSm: true, render: r => {
           const bits = [];
           if (r.imageUrl) bits.push('&#128247;');
           if (r.docUrl) bits.push('&#128196;');
@@ -413,6 +414,98 @@ function renderAssetDetail(id) {
 function newWOFor(assetId) { editWO(null, assetId); }
 function newPMFor(assetId) { editPM(null, assetId); }
 function newPartFor(assetId) { editPart(null, assetId); }
+
+/* ============================================================
+   QR TAGS
+   ============================================================ */
+function renderQR() {
+  const assets = DB.all('assets').filter(a =>
+    matches(a, ['id', 'name', 'location', 'manufacturer']));
+  const base = appBaseUrl();
+
+  if (!base) {
+    return `<h1 class="page">QR Tags</h1>
+      <div class="note bad">This page is open as a local file, so there is no web address to encode.
+      Open the app from its Vercel URL (or <span class="mono">npm run dev</span>) and the codes will generate.</div>`;
+  }
+
+  if (!assets.length) {
+    return `<h1 class="page">QR Tags</h1>
+      <p class="sub">No assets to tag yet.</p>
+      <div class="placeholder">Add an asset first, then come back to print its tag.
+      <div class="actions" style="justify-content:center">
+        <button class="btn filled" onclick="editAsset()">&#43; New asset</button></div></div>`;
+  }
+
+  const site = DB.raw().meta.site || '';
+
+  return `
+  <h1 class="page">QR Tags</h1>
+  <p class="sub">${assets.length} tag${assets.length === 1 ? '' : 's'} — print, cut, and stick one on each machine.
+    Scanning opens that asset straight from a phone camera.</p>
+
+  <div class="chipset hide-print">
+    <button class="btn filled" onclick="window.print()">&#128424; Print these tags</button>
+    <a class="btn out" href="#/assets">Back to assets</a>
+    <span style="color:var(--muted);font-size:12.5px">Codes point at <span class="mono">${esc(base)}</span></span>
+  </div>
+
+  <div class="note hide-print">
+    <b>Printing tips.</b> Three tags per row on paper, sized for a standard label sheet.
+    Print at 100% (no "fit to page") so the code stays square. Laminate or use clear tape —
+    a QR still scans through tape, but not through oil and dust.
+    Any phone camera reads these; no app needed.
+  </div>
+
+  <div class="card">
+    <div class="tagsheet">
+      ${assets.map(a => `
+        <div class="tag">
+          ${qrSvg(assetUrl(a.id), 132)}
+          <div class="aid">${esc(a.id)}</div>
+          <div class="anm">${esc(a.name || '')}</div>
+          ${a.location ? `<div class="aloc">${esc(a.location)}</div>` : ''}
+          <div class="brand">Tech X${site ? ' · ' + esc(site) : ''}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* single big QR for one asset */
+function showQR(id) {
+  const a = DB.get('assets', id);
+  if (!a) return;
+  const url = assetUrl(id);
+  Modal.open({
+    title: 'QR tag — ' + a.id,
+    body: `
+      <div class="qrbig">${qrSvg(url, 240)}</div>
+      <div style="text-align:center">
+        <div style="font-size:20px;font-weight:700;font-family:'Roboto Mono',monospace">${esc(a.id)}</div>
+        <div style="color:var(--muted);margin-top:4px">${esc(a.name || '')}</div>
+      </div>
+      <div class="qrurl">${esc(url)}</div>
+      <div class="note">Point any phone camera at this to open the asset. Stick the printed
+      version on the machine so a tech can pull up its history without typing anything.</div>`,
+    footer: `
+      <button class="btn filled" onclick="downloadTag('${jsq(id)}')">Download SVG</button>
+      <a class="btn out" href="#/qr" onclick="Modal.close()">Print sheet</a>
+      <button class="btn out" onclick="Modal.close()">Close</button>`
+  });
+}
+
+function downloadTag(id) {
+  const a = DB.get('assets', id);
+  if (!a) return;
+  const svg = QR.toSVG(assetUrl(id), { size: 600 });
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const el = document.createElement('a');
+  el.href = URL.createObjectURL(blob);
+  el.download = 'qr-' + String(id).replace(/[^a-z0-9_-]/gi, '_') + '.svg';
+  el.click();
+  URL.revokeObjectURL(el.href);
+  toast('QR downloaded — scales to any size without blurring');
+}
 
 /* ============================================================
    ASSET form
@@ -436,6 +529,7 @@ function editAsset(id) {
       ${F.area('notes', 'Notes', a.notes)}`,
     footer: `
       <button class="btn filled" onclick="saveAsset(${isNew})">Save asset</button>
+      ${!isNew ? `<button class="btn out" onclick="showQR('${jsq(a.id)}')">QR tag</button>` : ''}
       <button class="btn out" onclick="Modal.close()">Cancel</button>
       ${!isNew ? `<button class="btn bad" style="margin-left:auto" onclick="delAsset('${jsq(a.id)}')">Delete</button>` : ''}`
   });
@@ -494,10 +588,10 @@ function renderPM() {
     ${renderTable([
       { label: 'PM', render: r => `<b class="mono">${esc(r.id)}</b>` },
       { label: 'Task', render: r => `<b>${esc(r.description || '—')}</b><br><small style="color:var(--muted)">${esc(DB.assetName(r.assetId))}</small>` },
-      { label: 'Frequency', render: r => `<span class="chip c-open">${esc(r.frequency || '—')}</span>` },
+      { label: 'Frequency', hideSm: true, render: r => `<span class="chip c-open">${esc(r.frequency || '—')}</span>` },
       { label: 'Next due', render: r => dueChip(r.nextDue) },
-      { label: 'Last done', render: r => fmtDate(r.lastDone) },
-      { label: 'Technician', render: r => r.tech ? esc(r.tech) : '<span style="color:var(--muted)">Unassigned</span>' },
+      { label: 'Last done', hideSm: true, render: r => fmtDate(r.lastDone) },
+      { label: 'Technician', hideSm: true, render: r => r.tech ? esc(r.tech) : '<span style="color:var(--muted)">Unassigned</span>' },
       { label: '', render: r => `<button class="btn tonal sm" onclick="event.stopPropagation();genWO('${jsq(r.id)}')">Generate WO</button>
         <button class="btn out sm" onclick="event.stopPropagation();completePM('${jsq(r.id)}')">Mark done</button>` }
     ], rows, { empty: 'No PM schedules yet.', onRow: 'editPM' })}
@@ -604,12 +698,12 @@ function renderParts() {
     ${renderTable([
       { label: 'Part number', render: r => `<b class="mono">${esc(r.id)}</b>` },
       { label: 'Description', render: r => `<b>${esc(r.description || '—')}</b><br><small style="color:var(--muted)">${esc(DB.assetName(r.assetId))}</small>` },
-      { label: 'Mfr P/N', render: r => `<span class="mono">${esc(r.mfrPn || '—')}</span>` },
-      { label: 'Vendor', key: 'vendor' },
+      { label: 'Mfr P/N', hideSm: true, render: r => `<span class="mono">${esc(r.mfrPn || '—')}</span>` },
+      { label: 'Vendor', key: 'vendor', hideSm: true },
       { label: 'Location', render: r => `<span class="mono">${esc(r.location || '—')}</span>` },
       { label: 'On hand', num: true, render: r => r.qty ?? '—' },
-      { label: 'Min', num: true, render: r => r.min ?? '—' },
-      { label: 'Unit cost', num: true, render: r => money(r.cost) },
+      { label: 'Min', num: true, hideSm: true, render: r => r.min ?? '—' },
+      { label: 'Unit cost', num: true, hideSm: true, render: r => money(r.cost) },
       { label: 'Status', render: r => { const s = DB.partStatus(r); return `<span class="chip ${s.cls}">${s.label}</span>`; } },
       { label: '', render: r => `<button class="btn tonal sm" onclick="event.stopPropagation();countPart('${jsq(r.id)}')">Count</button>` }
     ], rows, { empty: 'No parts yet.', onRow: 'editPart' })}
@@ -669,7 +763,7 @@ function countPart(id) {
 }
 
 /* ============================================================
-   WORK ORDERS — list + calendar
+   WORK ORDERS
    ============================================================ */
 function setWOView(v) { WO_VIEW = v; route(); }
 function setWOFilter(f) { WO_FILTER = f; route(); }
@@ -721,17 +815,16 @@ function renderWO() {
     ${renderTable([
       { label: 'WO', render: r => `<b class="mono">${esc(r.id)}</b>` },
       { label: 'Description', render: r => `<b>${esc(r.description || '—')}</b><br><small style="color:var(--muted)">${esc(DB.assetName(r.assetId))}${r.pmId ? ' · from ' + esc(r.pmId) : ''}</small>` },
-      { label: 'Type', render: r => `<span class="chip c-open">${esc(r.type || '—')}</span>` },
+      { label: 'Type', hideSm: true, render: r => `<span class="chip c-open">${esc(r.type || '—')}</span>` },
       { label: 'Priority', render: r => prioChip(r.priority) },
-      { label: 'Assigned to', render: r => r.assignedTo ? esc(r.assignedTo) : '<span style="color:var(--muted)">Unassigned</span>' },
-      { label: 'Scheduled', render: r => fmtDate(r.dateDue || r.dateRequested) },
-      { label: 'Hours', num: true, render: r => r.hours ?? '—' },
+      { label: 'Assigned to', hideSm: true, render: r => r.assignedTo ? esc(r.assignedTo) : '<span style="color:var(--muted)">Unassigned</span>' },
+      { label: 'Scheduled', hideSm: true, render: r => fmtDate(r.dateDue || r.dateRequested) },
+      { label: 'Hours', num: true, hideSm: true, render: r => r.hours ?? '—' },
       { label: 'Status', render: r => statusChip(r.status) }
     ], rows, { empty: 'No work orders in this view.', onRow: 'editWO' })}
   </div>`}`;
 }
 
-/* ---------- calendar ---------- */
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -751,7 +844,6 @@ function renderWOCalendar() {
   const daysInMonth = new Date(CAL.y, CAL.m + 1, 0).getDate();
   const todayIso = today();
 
-  /* bucket events by ISO date */
   const byDay = {};
   const push = (iso, html) => { if (!iso) return; (byDay[iso] = byDay[iso] || []).push(html); };
 
@@ -759,7 +851,7 @@ function renderWOCalendar() {
     .forEach(w => {
       const iso = DB.woDate(w);
       const cls = DB.isDone(w) ? 'ev-done' : w.status === 'In Progress' ? 'ev-prog'
-        : w.status === 'On Hold' || w.status === 'Cancelled' ? 'ev-hold' : 'ev-open';
+        : (w.status === 'On Hold' || w.status === 'Cancelled') ? 'ev-hold' : 'ev-open';
       push(iso, `<div class="ev ${cls}" title="${esc(w.id + ' · ' + (w.description || ''))}"
         onclick="editWO('${jsq(w.id)}')">${esc(w.id)} ${esc((w.description || '').slice(0, 22))}</div>`);
     });
@@ -775,12 +867,12 @@ function renderWOCalendar() {
   for (let i = 0; i < startPad; i++) cells += '<div class="day pad"></div>';
   for (let d = 1; d <= daysInMonth; d++) {
     const iso = `${CAL.y}-${String(CAL.m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const evs = (byDay[iso] || []).join('');
     cells += `<div class="day ${iso === todayIso ? 'today' : ''}">
-      <div class="dnum">${d}</div>${evs}</div>`;
+      <div class="dnum">${d}</div>${(byDay[iso] || []).join('')}</div>`;
   }
 
-  const monthCount = Object.keys(byDay).filter(k => k.startsWith(`${CAL.y}-${String(CAL.m + 1).padStart(2, '0')}`))
+  const prefix = `${CAL.y}-${String(CAL.m + 1).padStart(2, '0')}`;
+  const monthCount = Object.keys(byDay).filter(k => k.startsWith(prefix))
     .reduce((s, k) => s + byDay[k].length, 0);
 
   return `
@@ -793,12 +885,10 @@ function renderWOCalendar() {
       <button class="fchip ${CAL.pms ? 'on' : ''}" onclick="calTogglePMs()">Show PM due dates</button>
       <span style="color:var(--muted);font-size:12.5px;margin-left:auto">${monthCount} item${monthCount === 1 ? '' : 's'} this month</span>
     </div>
-
     <div class="cal">
       ${DOW.map(d => `<div class="dow">${d}</div>`).join('')}
       ${cells}
     </div>
-
     <div class="legend">
       <span><i style="background:var(--info-c)"></i>Open</span>
       <span><i style="background:var(--warn-c)"></i>In progress</span>
@@ -806,13 +896,11 @@ function renderWOCalendar() {
       <span><i style="background:var(--surf-3)"></i>On hold / cancelled</span>
       ${CAL.pms ? '<span><i style="background:var(--pur-c)"></i>PM due</span>' : ''}
     </div>
-
     <div class="note">Work orders sit on their <b>scheduled date</b> when one is set, otherwise the
-    completion date, otherwise the date requested. Click any item to open it.</div>
+    completion date, otherwise the date requested. Tap any item to open it.</div>
   </div>`;
 }
 
-/* ---------- WO form ---------- */
 function editWO(id, presetAsset) {
   const w = id ? DB.get('wos', id) : {};
   const isNew = !id;
@@ -918,7 +1006,7 @@ function renderImport() {
       onclick="document.getElementById('fileIn').click()">
       <span class="big">&#128193;</span>
       <b>Drop a .csv file here</b><br>
-      <small style="color:var(--muted)">or click to browse${IMPORT.filename ? ' — currently loaded: <b>' + esc(IMPORT.filename) + '</b>' : ''}</small>
+      <small style="color:var(--muted)">or tap to browse${IMPORT.filename ? ' — currently loaded: <b>' + esc(IMPORT.filename) + '</b>' : ''}</small>
     </div>
     <input type="file" id="fileIn" accept=".csv,text/csv" style="display:none" onchange="pickFile(event)"/>
     <div class="actions">
@@ -1044,6 +1132,7 @@ function renderSettings() {
   const db = DB.raw();
   const counts = { Assets: db.assets.length, PMs: db.pms.length, Parts: db.parts.length, 'Work orders': db.wos.length };
   const bytes = new Blob([JSON.stringify(db)]).size;
+  const base = appBaseUrl();
 
   return `
   <h1 class="page">Settings</h1>
@@ -1053,6 +1142,8 @@ function renderSettings() {
     <h3 class="sec">Site</h3>
     <label for="siteName">Site name</label>
     <input id="siteName" value="${esc(db.meta.site || '')}" onchange="saveSite(this.value)"/>
+    ${base ? `<div class="note">This app is served from <span class="mono">${esc(base)}</span>.
+      QR tags encode that address, so they keep working as long as the URL does.</div>` : ''}
   </div>
 
   <div class="card">
@@ -1088,9 +1179,8 @@ function renderSettings() {
     </div>
     <div class="note">
       <b>To publish:</b> click Publish, then drop the downloaded <span class="mono">db.json</span> into
-      <span class="mono">data/shared/</span> in your repo and commit it:<br>
-      <span class="mono">git add data/shared/db.json &amp;&amp; git commit -m "Update plant data" &amp;&amp; git push</span><br>
-      Vercel redeploys automatically, and everyone else gets it on their next Pull.
+      <span class="mono">data/shared/</span> in your repo and commit it. Vercel redeploys automatically,
+      and everyone else gets it on their next Pull.
     </div>
   </div>
 
@@ -1180,8 +1270,8 @@ function seedSample() {
   const plus = n => DB.addDays(d, n);
 
   DB.bulkUpsert('assets', [
-    { id: '3526', name: 'Top Roll Assembly', manufacturer: '3Con', project: '3527', location: 'Ultrasonic weld cell', status: 'Active', notes: 'Ultrasonic sonotrode weld cell' },
-    { id: '3527', name: 'Air Compressor #1', manufacturer: 'Atlas Copco', location: 'Utilities room', status: 'Active' }
+    { id: '3526', name: 'Top Roll Assembly', manufacturer: '3Con', model: 'TR-900', project: '3527', location: 'Ultrasonic weld cell', status: 'Active', notes: 'Ultrasonic sonotrode weld cell' },
+    { id: '3527', name: 'Air Compressor #1', manufacturer: 'Atlas Copco', model: 'GA22', location: 'Utilities room', status: 'Active' }
   ]);
 
   DB.bulkUpsert('pms', [
@@ -1218,12 +1308,10 @@ function seedSample() {
       hours: '2.5', cost: '1250', status: 'Completed', cause: 'Wear / end of life', partsUsed: 'CT_12672' },
     { id: 'WO-1003', assetId: '3526', description: 'Weld quality drift — investigate generator output', type: 'Troubleshoot',
       priority: 'High', requestedBy: 'Quality', assignedTo: '',
-      dateRequested: DB.addDays(d, -2), dateDue: DB.addDays(d, 3),
-      status: 'Open', cause: 'To be determined' },
+      dateRequested: DB.addDays(d, -2), dateDue: DB.addDays(d, 3), status: 'Open', cause: 'To be determined' },
     { id: 'WO-1004', assetId: '3526', description: 'Air leak at main regulator', type: 'Repair',
       priority: 'Low', requestedBy: 'Night shift', assignedTo: '',
-      dateRequested: DB.addDays(d, -1), dateDue: DB.addDays(d, 6),
-      status: 'On Hold', cause: 'To be determined' }
+      dateRequested: DB.addDays(d, -1), dateDue: DB.addDays(d, 6), status: 'On Hold', cause: 'To be determined' }
   ]);
 
   route();

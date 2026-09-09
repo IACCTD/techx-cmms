@@ -9,7 +9,6 @@ const CSV = (() => {
     text = String(text).replace(/^\uFEFF/, '');
     const rows = [];
     let row = [], field = '', q = false;
-
     for (let i = 0; i < text.length; i++) {
       const c = text[i], n = text[i + 1];
       if (q) {
@@ -48,8 +47,7 @@ const CSV = (() => {
   function build(headers, rows) {
     const head = headers.map(h => esc(h.label || h)).join(',');
     const body = rows.map(r =>
-      headers.map(h => esc(typeof h === 'string' ? r[h] : r[h.key])).join(',')
-    ).join('\n');
+      headers.map(h => esc(typeof h === 'string' ? r[h] : r[h.key])).join(',')).join('\n');
     return head + '\n' + body;
   }
 
@@ -66,11 +64,11 @@ const CSV = (() => {
 
   const ALIAS = {
     assets: {
-      id: ['assetid', 'asset', 'assetnumber', 'assetno', 'id', 'equipmentid', 'serialnumber', 'serial'],
+      id: ['assetid', 'asset', 'assetnumber', 'assetno', 'id', 'equipmentid'],
       name: ['equipmentname', 'assetname', 'name', 'description', 'equipment'],
       manufacturer: ['manufacturer', 'mfr', 'make', 'oem'],
       model: ['model', 'modelnumber', 'modelno'],
-      serial: ['serialno', 'serialnum', 'sn'],
+      serial: ['serialnumber', 'serialno', 'serial', 'serialnum', 'sn'],
       project: ['projectnumber', 'project', 'projectno', 'projno', 'proj', 'projectnum'],
       location: ['location', 'area', 'line', 'cell', 'plant'],
       status: ['status', 'state'],

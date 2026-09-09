@@ -1,15 +1,10 @@
 /* ============================================================
    sync.js — shared data via the Git repo
-   ------------------------------------------------------------
-   The repo holds one file, data/shared/db.json, which is the
-   agreed master copy. The app can PULL it (read) but cannot
-   PUSH to GitHub from the browser — publishing is a deliberate
-   commit made by whoever owns the data.
-
-   Why no direct push: writing to GitHub from a web page needs a
-   personal access token shipped in the page, which anyone can
-   read from view-source. That token would grant write access to
-   the whole repo. Not worth it. Publishing stays a git commit.
+   The repo holds data/shared/db.json as the master copy. The app
+   can PULL it but cannot PUSH: writing to GitHub from a browser
+   needs a token embedded in the page, readable via view-source,
+   granting write access to the whole repo. Publishing stays a
+   deliberate git commit.
    ============================================================ */
 
 const Repo = {
@@ -23,7 +18,6 @@ const Repo = {
     return json;
   },
 
-  /* mode: 'replace' repo wins outright | 'repo' merge repo wins | 'mine' merge local wins */
   async pull(mode = 'replace') {
     const shared = await this.fetchShared();
     const local = DB.raw();
@@ -71,8 +65,7 @@ const Repo = {
       },
       assets: db.assets, pms: db.pms, parts: db.parts, wos: db.wos
     };
-    const text = JSON.stringify(payload, null, 2);
-    const blob = new Blob([text], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'db.json';
@@ -90,10 +83,8 @@ const Repo = {
       publishedBy: shared.meta && shared.meta.publishedBy,
       behind: !!pubs && pubs !== seen,
       counts: {
-        assets: (shared.assets || []).length,
-        pms: (shared.pms || []).length,
-        parts: (shared.parts || []).length,
-        wos: (shared.wos || []).length
+        assets: (shared.assets || []).length, pms: (shared.pms || []).length,
+        parts: (shared.parts || []).length, wos: (shared.wos || []).length
       }
     };
   },
@@ -102,7 +93,6 @@ const Repo = {
     const db = DB.raw();
     const empty = !db.assets.length && !db.pms.length && !db.parts.length && !db.wos.length;
     if (!empty) return false;
-    try { await this.pull('replace'); return true; }
-    catch (e) { return false; }
+    try { await this.pull('replace'); return true; } catch (e) { return false; }
   }
 };
