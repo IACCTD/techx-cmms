@@ -1,8 +1,8 @@
 PM Number,Asset ID,PM Description,Frequency,Next Due Date,Last Completed,Assigned Technician
-PM-003,3526,Inspect and clean sonotrodes/anvils; check ultrasonic weld quality and tighten stack hardware,weekly,2026-09-10,,
-PM-004,3526,Clean/replace main air supply filters and moisture separators; verify regulator settings,monthly,2026-10-03,,
-PM-005,3526,Lubricate sliding and rotating components; check air-line lubricator drip,monthly,2026-10-03,,
-PM-006,3526,Clean photo-eyes/sensors and air blow-off nozzles; verify nest cleaning function,monthly,2026-10-03,,
+PM-003,3526,Inspect and clean sonotrodes/anvils; check ultrasonic weld quality and tighten stack hardware,weekly,2026-09-11,,
+PM-004,3526,Clean/replace main air supply filters and moisture separators; verify regulator settings,monthly,2026-09-18,,
+PM-005,3526,Lubricate sliding and rotating components; check air-line lubricator drip,monthly,2026-09-23,,
+PM-006,3526,Clean photo-eyes/sensors and air blow-off nozzles; verify nest cleaning function,monthly,2026-10-01,,
 PM-007,3526,Inspect ultrasonic generators and tightening controller; verify fault-free operation,quarterly,2026-12-03,,
 PM-008,3526,"Inspect guarding, safety interlocks, E-stops and light curtains; confirm no air leaks",quarterly,2026-12-03,,
 PM-009,3526,Back up PLC/servo programs; review hour-meter counters and inspect servo drives,annually,2027-09-03,,

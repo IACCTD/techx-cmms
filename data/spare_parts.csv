@@ -1,11 +1,11 @@
-Part Number,Description,Asset ID,Manufacturer Part Number,Vendor,Storage Location,Quantity On Hand,Minimum Quantity,Maximum Quantity,Unit Cost
-CT_12672,Sonotrode,3526,6821000797,3CON,SP1-I2-B5,,,,
-CT_12673,Sonotrode,3526,6841000758,3CON,SP1-I2-B4,,,,
-CT_1710,Ultrasonic generator,3526,88194,HERRMANN,SP1-E3-B22,,,,
-CT_13166,Power Focus 6000 tightening controller,3526,8436095010,ATLAS COPCO,SP1-H2-B3,,,,
-CT_10591,SIMATIC ET 200SP analog input module,3526,6ES7134-6GF00-0AA1,SIEMENS,SP1-E3-A11,,,,
-CT_1707,SIMATIC ET 200SP digital input module,3526,6ES7131-6BF01-0BA0,SIEMENS,SP1-E3-A5,,,,
-CT_1708,SIMATIC ET 200SP digital output module,3526,6ES7132-6BH01-0BA0,SIEMENS,SP1-E3-A4,,,,
-CT_1709,SIMATIC ET 200SP digital output module,3526,6ES7132-6BF01-0BA0,SIEMENS,SP1-E3-A6,,,,
-CT_1711,SIMATIC ET 200SP BaseUnit BU15-P16+A10+2D,3526,6ES7193-6BP20-0DA0,SIEMENS,SP1-E3-A3,,,,
-P-1001,Compressor oil filter,3527,GRA-4471,Grainger,SP1-A1-B2,12,5,20,38.50
+Part Number,Description,Asset ID,Manufacturer Part Number,Vendor,Storage Location,Quantity On Hand,Minimum Quantity,Maximum Quantity,Unit Cost,Image URL,Spec Sheet
+CT_12672,Sonotrode,3526,6821000797,3CON,SP1-I2-B5,,,,,,
+CT_12673,Sonotrode,3526,6841000758,3CON,SP1-I2-B4,,,,,,
+CT_1710,Ultrasonic generator,3526,88194,HERRMANN,SP1-E3-B22,,,,,,
+CT_13166,Power Focus 6000 tightening controller,3526,8436095010,ATLAS COPCO,SP1-H2-B3,,,,,,
+CT_10591,SIMATIC ET 200SP analog input module,3526,6ES7134-6GF00-0AA1,SIEMENS,SP1-E3-A11,,,,,,
+CT_1707,SIMATIC ET 200SP digital input module,3526,6ES7131-6BF01-0BA0,SIEMENS,SP1-E3-A5,,,,,,
+CT_1708,SIMATIC ET 200SP digital output module,3526,6ES7132-6BH01-0BA0,SIEMENS,SP1-E3-A4,,,,,,
+CT_1709,SIMATIC ET 200SP digital output module,3526,6ES7132-6BF01-0BA0,SIEMENS,SP1-E3-A6,,,,,,
+CT_1711,SIMATIC ET 200SP BaseUnit BU15-P16+A10+2D,3526,6ES7193-6BP20-0DA0,SIEMENS,SP1-E3-A3,,,,,,
+P-1001,Compressor oil filter,3527,GRA-4471,Grainger,SP1-A1-B2,12,5,20,38.50,,

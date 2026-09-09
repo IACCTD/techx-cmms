@@ -1,2 +1,3 @@
-Work Order Number,Asset ID,Description,Work Type,Priority,Requested By,Assigned To,Request Date,Date Started,Date Completed,Labor Hours,Cost,Cause of Failure,Parts Needed,Status
-WO-1001,3526,Oil leak at compressor head,Repair,High,Chris Myers,John Davis,2026-09-01,2026-09-02,,4.0,450,,,In Progress
+Work Order Number,Asset ID,Description,Work Type,Priority,Requested By,Assigned To,Request Date,Scheduled Date,Date Started,Date Completed,Labor Hours,Cost,Cause of Failure,Parts Needed,Status
+WO-1001,3527,Oil leak at compressor head,Repair,High,Chris Myers,John Davis,2026-09-01,2026-09-10,2026-09-02,,4.0,450,,,In Progress
+WO-1002,3526,Replace worn sonotrode on station 2,Repair,Medium,Marcelo Frazzato,John Davis,2026-08-19,,2026-08-20,2026-08-20,2.5,1250,Wear / end of life,CT_12672,Completed

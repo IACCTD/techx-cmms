@@ -1,2 +1,4 @@
-Asset ID,Equipment Name,Manufacturer,Project Number,Location,Status,Notes
-3526,Top Roll Assembly,3Con,3527,Ultrasonic weld cell,Active,Ultrasonic sonotrode weld cell
+Asset ID,Equipment Name,Manufacturer,Model,Project Number,Location,Status,Notes
+3526,Top Roll Assembly,3Con,TR-900,3527,Ultrasonic weld cell,Active,Ultrasonic sonotrode weld cell
+3527,Air Compressor #1,Atlas Copco,GA22,,Utilities room,Active,
+3528,Conveyor Line 2,Dorner,2200,,Assembly line 2,Active,
