@@ -1,132 +1,136 @@
 /* ============================================================
-   ui.js — small rendering helpers (no framework)
+   ui.js — rendering helpers (no framework)
    ============================================================ */
-
-function esc(s) {
-  return String(s === null || s === undefined ? '' : s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+function esc(s){
+  return String(s===null||s===undefined?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-
-/* Safe inside a single-quoted JS string that sits inside a double-quoted
-   HTML attribute: onclick="fn('<here>')". Escapes for JS then for HTML —
-   without the HTML pass, a quote in an ID escapes the attribute. */
-function jsq(s) {
-  return esc(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+/* Safe inside a single-quoted JS string within a double-quoted HTML
+   attribute: onclick="fn('<here>')". JS-escape then HTML-escape —
+   without the HTML pass a quote in an ID breaks out of the attribute. */
+function jsq(s){
+  return esc(String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
 }
 
 let _toastT;
-function toast(msg) {
-  const e = document.getElementById('toast');
-  if (!e) return;
-  e.textContent = msg;
-  e.classList.add('show');
+function toast(msg){
+  const e=document.getElementById('toast');
+  if(!e)return;
+  e.textContent=msg; e.classList.add('show');
   clearTimeout(_toastT);
-  _toastT = setTimeout(() => e.classList.remove('show'), 2800);
+  _toastT=setTimeout(()=>e.classList.remove('show'),3000);
 }
 
-const Modal = {
-  open({ title, body, footer }) {
-    document.getElementById('drawerTitle').textContent = title;
-    document.getElementById('drawerBody').innerHTML = body;
-    document.getElementById('drawerFoot').innerHTML = footer || '';
+const Modal={
+  open({title,body,footer}){
+    document.getElementById('drawerTitle').textContent=title;
+    document.getElementById('drawerBody').innerHTML=body;
+    document.getElementById('drawerFoot').innerHTML=footer||'';
     document.getElementById('drawer').classList.add('show');
     document.getElementById('scrim').classList.add('show');
-    const first = document.querySelector('#drawerBody input:not([readonly]),#drawerBody select,#drawerBody textarea');
-    if (first) setTimeout(() => first.focus(), 180);
+    const first=document.querySelector('#drawerBody input:not([readonly]),#drawerBody select,#drawerBody textarea');
+    if(first)setTimeout(()=>first.focus(),180);
   },
-  close() {
+  close(){
     document.getElementById('drawer').classList.remove('show');
     document.getElementById('scrim').classList.remove('show');
   }
 };
-document.addEventListener('keydown', e => { if (e.key === 'Escape') Modal.close(); });
+document.addEventListener('keydown',e=>{if(e.key==='Escape')Modal.close();});
 
-const F = {
-  text(name, label, val, opts = {}) {
-    return `<label class="${opts.required ? 'req' : ''}" for="f_${name}">${esc(label)}</label>
-      <input id="f_${name}" name="${name}" value="${esc(val ?? '')}"
-        ${opts.readonly ? 'readonly' : ''} ${opts.placeholder ? `placeholder="${esc(opts.placeholder)}"` : ''}/>`;
-  },
-  num(name, label, val, opts = {}) {
+const F={
+  text(name,label,val,opts={}){
+    return `<label class="${opts.required?'req':''}" for="f_${name}">${esc(label)}</label>
+      <input id="f_${name}" name="${name}" type="${opts.type||'text'}" value="${esc(val??'')}"
+        ${opts.readonly?'readonly':''} ${opts.placeholder?`placeholder="${esc(opts.placeholder)}"`:''}
+        ${opts.autocomplete?`autocomplete="${opts.autocomplete}"`:''}/>`;},
+  num(name,label,val,opts={}){
     return `<label for="f_${name}">${esc(label)}</label>
-      <input id="f_${name}" name="${name}" type="number" step="${opts.step || 'any'}"
-        value="${esc(val ?? '')}" ${opts.placeholder ? `placeholder="${esc(opts.placeholder)}"` : ''}/>`;
-  },
-  date(name, label, val) {
+      <input id="f_${name}" name="${name}" type="number" step="${opts.step||'any'}" value="${esc(val??'')}"/>`;},
+  date(name,label,val){
     return `<label for="f_${name}">${esc(label)}</label>
-      <input id="f_${name}" name="${name}" type="date" value="${esc(val ?? '')}"/>`;
-  },
-  select(name, label, val, options, opts = {}) {
-    const o = options.map(x => {
-      const v = typeof x === 'string' ? x : x.v;
-      const t = typeof x === 'string' ? x : x.t;
-      return `<option value="${esc(v)}" ${String(val ?? '') === String(v) ? 'selected' : ''}>${esc(t)}</option>`;
+      <input id="f_${name}" name="${name}" type="date" value="${esc(val??'')}"/>`;},
+  select(name,label,val,options,opts={}){
+    const o=options.map(x=>{
+      const v=typeof x==='string'?x:x.v, t=typeof x==='string'?x:x.t;
+      return `<option value="${esc(v)}" ${String(val??'')===String(v)?'selected':''}>${esc(t)}</option>`;
     }).join('');
-    return `<label class="${opts.required ? 'req' : ''}" for="f_${name}">${esc(label)}</label>
-      <select id="f_${name}" name="${name}">${o}</select>`;
-  },
-  area(name, label, val, rows = 3) {
+    return `<label class="${opts.required?'req':''}" for="f_${name}">${esc(label)}</label>
+      <select id="f_${name}" name="${name}">${o}</select>`;},
+  area(name,label,val,rows=3){
     return `<label for="f_${name}">${esc(label)}</label>
-      <textarea id="f_${name}" name="${name}" rows="${rows}">${esc(val ?? '')}</textarea>`;
-  },
-  read() {
-    const out = {};
-    document.querySelectorAll('#drawerBody [name]').forEach(el => { out[el.name] = el.value.trim(); });
-    return out;
-  }
+      <textarea id="f_${name}" name="${name}" rows="${rows}">${esc(val??'')}</textarea>`;},
+  read(){
+    const out={};
+    document.querySelectorAll('#drawerBody [name]').forEach(el=>{out[el.name]=el.value.trim();});
+    return out;}
 };
 
-function assetOptions() {
-  return [{ v: '', t: '— none —' }].concat(
-    DB.all('assets').map(a => ({ v: a.id, t: a.id + ' · ' + a.name })));
+function assetOptions(){
+  return [{v:'',t:'— none —'}].concat(
+    DB.all('assets').map(a=>({v:a.id,t:a.id+' · '+a.name})));
 }
 
-function renderTable(cols, rows, opts = {}) {
-  if (!rows.length) return `<div class="empty">${esc(opts.empty || 'Nothing here yet.')}</div>`;
-  const head = cols.map(c => `<th${c.num ? ' style="text-align:right"' : ''}>${esc(c.label)}</th>`).join('');
-  const body = rows.map((r, i) => {
-    const tds = cols.map(c => {
-      const v = c.render ? c.render(r, i) : esc(r[c.key] ?? '');
-      return `<td class="${c.num ? 'num' : ''}"${c.hideSm ? ' data-sm="hide"' : ''}>${v}</td>`;
-    }).join('');
-    const click = opts.onRow ? ` class="clk" onclick="${opts.onRow}('${jsq(r.id)}')"` : '';
-    return `<tr${click}>${tds}</tr>`;
-  }).join('');
-  const headCells = cols.map(c => `<th${c.num ? ' style="text-align:right"' : ''}${c.hideSm ? ' data-sm="hide"' : ''}>${esc(c.label)}</th>`).join('');
-  return `<div class="tablewrap"><table><thead><tr>${headCells}</tr></thead><tbody>${body}</tbody></table></div>`;
+function renderTable(cols,rows,opts={}){
+  if(!rows.length)return `<div class="empty">${esc(opts.empty||'Nothing here yet.')}</div>`;
+  const head=cols.map(c=>
+    `<th${c.num?' style="text-align:right"':''}${c.hideSm?' data-sm="hide"':''}>${esc(c.label)}</th>`).join('');
+  const body=rows.map((r,i)=>{
+    const tds=cols.map(c=>{
+      const v=c.render?c.render(r,i):esc(r[c.key]??'');
+      return `<td class="${c.num?'num':''}"${c.hideSm?' data-sm="hide"':''}>${v}</td>`;}).join('');
+    const click=opts.onRow?` class="clk" onclick="${opts.onRow}('${jsq(r.id)}')"`:'';
+    return `<tr${click}>${tds}</tr>`;}).join('');
+  return `<div class="tablewrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
-function fmtDate(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso + (String(iso).length === 10 ? 'T00:00:00' : ''));
-  if (isNaN(d)) return esc(iso);
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+function fmtDate(iso){
+  if(!iso)return '—';
+  const d=new Date(iso+(String(iso).length===10?'T00:00:00':''));
+  if(isNaN(d))return esc(iso);
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
 }
-function money(v) {
-  const n = DB.num(v);
-  return n === null ? '—' : '$' + n.toFixed(2);
+function fmtDateTime(iso){
+  if(!iso)return '—';
+  const d=new Date(iso);
+  if(isNaN(d))return esc(String(iso).slice(0,10));
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
 }
-function today() { return new Date().toISOString().slice(0, 10); }
-function confirmDelete(msg, fn) { if (confirm(msg)) fn(); }
+function money(v){const n=DB.num(v);return n===null?'—':'$'+n.toFixed(2);}
+function today(){return new Date().toISOString().slice(0,10);}
+function confirmDelete(msg,fn){if(confirm(msg))fn();}
 
 /* ---------- QR helpers ---------- */
-
-/* The base URL this app is served from, without the #hash.
-   Everything is derived at runtime, so QR codes are correct on
-   localhost, on a preview deploy, and on production — nothing to
-   configure and nothing to rebuild when the domain changes. */
-function appBaseUrl() {
-  const o = location.origin;
-  if (!o || o === 'null') return '';        // opened as file://
-  return o + location.pathname.replace(/index\.html$/, '');
+/* Base URL worked out at runtime, so codes are right on localhost,
+   a preview deploy, and production with nothing to configure. */
+function appBaseUrl(){
+  const o=location.origin;
+  if(!o||o==='null')return '';
+  return o+location.pathname.replace(/index\.html$/,'');
 }
+function assetUrl(id){return appBaseUrl()+'#/asset/'+encodeURIComponent(id);}
 
-function assetUrl(id) {
-  return appBaseUrl() + '#/asset/' + encodeURIComponent(id);
+function qrEngineReady(){
+  return typeof QR!=='undefined'&&QR&&typeof QR.toSVG==='function';
 }
-
-function qrSvg(text, px) {
-  try { return QR.toSVG(text, { size: px || 150 }); }
-  catch (e) { return `<div class="empty">QR too long</div>`; }
+/* Never swallow the reason — a blank tag must be diagnosable. */
+function qrSvg(text,px){
+  if(!qrEngineReady())
+    return `<div class="qrfail"><b>QR engine not loaded</b><span>assets/qr.js is missing or failed to load</span></div>`;
+  if(!text)
+    return `<div class="qrfail"><b>No address to encode</b><span>open the app over http, not as a file</span></div>`;
+  try{ return QR.toSVG(text,{size:px||150}); }
+  catch(e){ return `<div class="qrfail"><b>Could not build code</b><span>${esc(e&&e.message?e.message:'unknown error')}</span></div>`; }
+}
+function qrSelfTest(){
+  if(!qrEngineReady())return{ok:false,msg:'assets/qr.js not loaded'};
+  try{
+    const m=QR.encode('https://example.com/#/asset/TEST-1');
+    if(!Array.isArray(m)||!m.length)return{ok:false,msg:'encoder returned nothing'};
+    const n=m.length;
+    if((n-17)%4!==0)return{ok:false,msg:'unexpected matrix size '+n};
+    if(!m[0][0]||!m[0][n-1]||!m[n-1][0])return{ok:false,msg:'finder patterns wrong'};
+    return{ok:true,msg:'encoder working ('+n+'×'+n+' test code)'};
+  }catch(e){return{ok:false,msg:e&&e.message?e.message:'threw an error'};}
 }
