@@ -18,11 +18,11 @@
     <span>&#128269;</span>
     <input id="globalSearch" placeholder="Search assets, parts, work orders…" autocomplete="off"/>
   </div>
-  <button class="btn tonal sm hide-print" onclick="Backup.export()">Backup</button>
+  <span id="connBadge" class="connchip" onclick="location.hash='#/settings'"></span>
 </div>
 
 <div class="shell">
-  <nav class="rail">
+  <nav class="rail" id="rail">
     <a class="nav" href="#/home" data-s="home"><span class="ico">&#127968;</span><span class="lbl">Home</span></a>
     <a class="nav" href="#/dashboard" data-s="dashboard"><span class="ico">&#128200;</span><span class="lbl">Dashboard</span></a>
     <a class="nav" href="#/assets" data-s="assets"><span class="ico">&#128451;</span><span class="lbl">Assets</span></a>
@@ -31,19 +31,16 @@
     <a class="nav" href="#/parts" data-s="parts"><span class="ico">&#128230;</span><span class="lbl">Spare Parts</span></a>
     <hr/>
     <a class="nav" href="#/qr" data-s="qr"><span class="ico">&#128241;</span><span class="lbl">QR Tags</span></a>
-    <a class="nav" href="#/import" data-s="import"><span class="ico">&#11015;</span><span class="lbl">Import CSV</span></a>
+    <a class="nav adminonly" href="#/import" data-s="import"><span class="ico">&#11015;</span><span class="lbl">Import CSV</span></a>
+    <a class="nav adminonly" href="#/users" data-s="users"><span class="ico">&#128101;</span><span class="lbl">Users</span></a>
     <a class="nav" href="#/settings" data-s="settings"><span class="ico">&#9881;</span><span class="lbl">Settings</span></a>
   </nav>
-
   <main class="content" id="view"></main>
 </div>
 
 <div class="drawer-scrim" id="scrim" onclick="Modal.close()"></div>
 <div class="drawer" id="drawer">
-  <div class="drawer-hd">
-    <b id="drawerTitle">Edit</b>
-    <button class="x" onclick="Modal.close()">&times;</button>
-  </div>
+  <div class="drawer-hd"><b id="drawerTitle">Edit</b><button class="x" onclick="Modal.close()">&times;</button></div>
   <div class="drawer-bd" id="drawerBody"></div>
   <div class="drawer-ft" id="drawerFoot"></div>
 </div>
@@ -52,7 +49,6 @@
 
 <script src="assets/qr.js"></script>
 <script src="assets/db.js"></script>
-<script src="assets/sync.js"></script>
 <script src="assets/csv.js"></script>
 <script src="assets/ui.js"></script>
 <script src="assets/app.js"></script>

@@ -1,25 +1,49 @@
 # Tech X — CMMS
 
-Maintenance management for the plant: **assets, PM schedules, spare parts, work orders**, with CSV import, a shared data file, and **QR tags for phone access**.
+Maintenance management for the plant: **assets, PM schedules, spare parts, work orders**, with QR tags for phone access, a shared Postgres database, and **per-user accounts with roles**.
 
-No build step. No database. No dependencies. Push to GitHub and Vercel serves it.
+**Setting up? → [SETUP.md](SETUP.md)**
 
 ---
 
-## QR tags — scan a machine, get its history
+## Accounts and roles
 
-Go to **QR Tags**, hit **Print these tags**, cut them out, stick one on each machine. A tech points any phone camera at the tag and the asset dashboard opens — no app to install, nothing to type.
+Everyone signs in with their own username and password. Two roles:
 
-The codes are generated from **the address the app is running on**, worked out at page load. Nothing to configure, and they stay correct on localhost, a preview deploy, or production.
+| | Maintenance | Admin |
+|---|---|---|
+| View everything | ✓ | ✓ |
+| Create and edit work orders | ✓ | ✓ |
+| Complete work orders and PMs | ✓ | ✓ |
+| Add and edit assets, PMs, parts | ✓ | ✓ |
+| Count spare parts | ✓ | ✓ |
+| **Delete** anything | — | ✓ |
+| **Import CSV** | — | ✓ |
+| **Manage users** | — | ✓ |
+| **Change site settings** | — | ✓ |
 
-> If your production URL ever changes, reprint the tags — the old ones point at the old address.
+Deleting is admin-only on purpose: it's the one action that quietly destroys a machine's history.
 
-Where to find them:
-- **QR Tags** screen — full printable sheet, three per row
-- **Asset dashboard** — a small code top-right, plus a **Tag** button for the large version
-- **Download SVG** — vector file for a label printer, scales to any size without blurring
+Admins manage people in **Users**. New accounts get a temporary password and are asked to choose their own on first sign-in. Leaving? **Disable** the account — they lose access immediately, but their history stays, which is what keeps "closed by John Davis" meaningful.
 
-Tested to scan reliably down to **20 mm** printed at 300 dpi, and still readable with camera blur, faded toner, sensor noise, and at any rotation. Laminate or cover with clear tape; a code scans through tape but not through oil and dust.
+The app refuses to demote or disable the last remaining admin, so nobody can lock everyone out.
+
+### Security
+
+- Passwords stored as **PBKDF2-SHA256**, 210,000 rounds, random salt per user. Never stored, logged, or returned in plain text.
+- Sign-in returns a **session token** (30 days). Only the token is kept in the browser.
+- Changing your password signs you out everywhere else.
+- **Every permission is enforced server-side.** Hidden buttons are a convenience; the server refuses the action regardless of what the browser sends.
+
+---
+
+## How the sync works
+
+Reads come from an in-memory cache, so screens render instantly. Writes hit the cache immediately, then go to the server in the background. A poll every 15 seconds checks a cheap revision string and pulls the full dataset only when it actually changed.
+
+If the connection drops, the app keeps working, queues writes on the device, and flushes on reconnect. The badge in the header shows which mode you're in.
+
+**Conflicts** merge field by field. If you edit the description while someone else sets the status, both survive. Same field edited twice, later write wins — no locking, which is the right trade for a maintenance team.
 
 ---
 
@@ -36,17 +60,17 @@ HOME
 └── AI Assist ──────→ reserved, not connected yet
 ```
 
-### Asset dashboard
-| Panel | Shows |
-|---|---|
-| **Header** | Name, ID, serial, manufacturer, model, location, project, status, QR code |
-| **Summary** | Pending · In progress · Incoming PMs (30 days) · Completed with hours |
-| **Recent repairs** | Last 5 completed WOs with cause of failure |
-| **PM program** | Frequency, next due, technician — *Generate WO* and *Mark done* inline |
-| **Machine BOM** | Parts with Mfr P/N, vendor, bin location, stock status, 📷/📄 links |
+---
 
-### Work orders
-**List** with filter chips, or **Calendar** colour-coded by status with PM due dates overlaid. Work orders sit on their *scheduled date*, falling back to completion date, then date requested.
+## QR tags
+
+**QR Tags → Print these tags**, cut, stick one on each machine. A phone camera opens that asset — no app, nothing typed.
+
+Codes are built from the address the app is running on, worked out at page load, so they're right on production and preview alike. Verified to scan at 20 mm printed at 300 dpi, and through blur, faded toner and any rotation.
+
+Print at 100% scale. Laminate or cover with clear tape.
+
+> If your production URL changes, reprint — old tags point at the old address.
 
 ---
 
@@ -57,58 +81,7 @@ HOME
 - A work order **cannot be completed until a cause of failure is recorded**.
 - A work order must be linked to an asset before it saves.
 - A part with no quantity reads *Not counted*, not *In stock*.
-
----
-
-## Phone use
-
-The layout adapts on a phone: nav becomes a scrolling strip, tables drop secondary columns, inputs are sized to avoid iOS zoom-on-focus. Add it to the home screen from the browser's share menu for an app-like icon.
-
-Remember data is per-device. A phone and a desktop each hold their own copy until you use the shared file below.
-
----
-
-## Sharing data through the repo
-
-`data/shared/db.json` is the master copy. First-time visitors get it automatically.
-
-**To publish:** Settings → **Publish** downloads `db.json`. Drop it in `data/shared/` and commit:
-
-```bash
-git add data/shared/db.json
-git commit -m "Update plant data"
-git push
-```
-
-**To receive:** Settings → **Pull** — *replace mine*, *repo wins*, or *keep my edits*.
-
-**One person owns the file at a time.** No locking; whoever commits second wins. Keep the repo **private** — asset lists, vendors and bin locations are in that file.
-
-No GitHub token ever goes in the browser: it would be readable via view-source and grant write access to the whole repo. That's why publishing is a commit.
-
----
-
-## Where the data lives
-
-Browser **localStorage**, per device, per browser, per domain. Close and reopen — it's there. Different browser or phone — separate copy. Clearing site data erases it, so use **Backup** regularly.
-
----
-
-## Run locally
-
-```bash
-npm run dev     # http://localhost:3000
-```
-
-Opening `index.html` directly works except the shared pull and QR codes, both of which need a real address.
-
----
-
-## Deploy
-
-Push to GitHub → vercel.com → **Add New → Project** → Import → Framework **Other**, build command and output directory **empty** → Deploy.
-
-> Folder names are case-sensitive on Vercel. It must be `assets`, lowercase.
+- Every record carries who last changed it, stamped from the session — not from anything the browser sends.
 
 ---
 
@@ -116,32 +89,58 @@ Push to GitHub → vercel.com → **Add New → Project** → Import → Framewo
 
 ```
 techx-cmms/
-├── index.html
+├── api/
+│   ├── data.js             # the whole backend: data, auth, users, roles
+│   └── package.json        # marks the folder as ES modules
 ├── assets/
 │   ├── styles.css
 │   ├── qr.js               # self-contained QR generator (no CDN)
-│   ├── db.js               # storage layer — swap this to add a backend
-│   ├── sync.js             # pull/publish the shared repo copy
+│   ├── db.js               # cache + write-through + offline queue + session
 │   ├── csv.js              # CSV parse/build + header aliasing
 │   ├── ui.js               # tables, forms, drawer, toast, escaping
 │   └── app.js              # router + every screen
-├── data/
-│   ├── shared/db.json      # MASTER COPY — commit this to share data
-│   └── *.csv               # import samples
+├── index.html
 ├── package.json
 ├── vercel.json
+├── .env.example
+├── SETUP.md
 └── README.md
 ```
 
-`qr.js` is written in-house rather than pulled from a CDN so tags still print if the plant network blocks outside scripts, and nothing breaks when a third-party CDN moves.
+### Database schema
+
+```sql
+records(collection, id, data JSONB, updated_at, updated_by, deleted)
+settings(key, value JSONB)
+users(username, full_name, role, salt, hash, active, must_change, created_at, last_login)
+sessions(token, username, created_at, expires_at)
+```
+
+One generic `records` table means adding a field never needs a migration. Deletes are soft — the row stays, flagged — so a mistaken tap is recoverable in SQL.
+
+All queries are parameterised; IDs and usernames are never concatenated into SQL.
 
 ---
 
-## Going multi-user later
+## Local development
 
-`db.js` exposes five functions: `all`, `get`, `upsert`, `remove`, `bulkUpsert`. Nothing else touches storage. Rewrite those against an API — Vercel Postgres, `/api/[entity].js` routes, auth — and every screen carries over untouched.
+```bash
+npm install
+npx vercel env pull .env.local
+npx vercel dev                    # http://localhost:3000
+```
 
-That's the step to take when two people need to enter work orders in the same shift.
+---
+
+## Notes on choices
+
+**Why Neon.** Vercel's Postgres product is now Neon, and `@vercel/postgres` is no longer maintained, so this uses `@neondatabase/serverless`.
+
+**Why the cache.** Making reads async would have meant rewriting every screen. The cache keeps the whole UI layer unchanged while the data is genuinely shared.
+
+**Why server-side attribution.** `updated_by` is taken from the session, not from the request body, so the audit trail can't be spoofed by editing what the browser sends.
+
+**What this still isn't.** Sessions never expire early on the server side beyond their 30-day window, there's no rate limiting on sign-in attempts, and there's no audit log of *who deleted what*. All worth adding if this expands beyond the maintenance team — none of it blocking for a plant-floor tool behind a private URL.
 
 ---
 
