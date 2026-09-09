@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#0b57d0"/>
 <title>Tech X CMMS — IAC Cottondale</title>
 <link rel="stylesheet" href="assets/styles.css"/>
 </head>
@@ -17,7 +18,7 @@
     <span>&#128269;</span>
     <input id="globalSearch" placeholder="Search assets, parts, work orders…" autocomplete="off"/>
   </div>
-  <button class="btn tonal sm" onclick="Backup.export()">Backup</button>
+  <button class="btn tonal sm hide-print" onclick="Backup.export()">Backup</button>
 </div>
 
 <div class="shell">
@@ -29,6 +30,7 @@
     <a class="nav" href="#/pm" data-s="pm"><span class="ico">&#128197;</span><span class="lbl">PM Plan</span></a>
     <a class="nav" href="#/parts" data-s="parts"><span class="ico">&#128230;</span><span class="lbl">Spare Parts</span></a>
     <hr/>
+    <a class="nav" href="#/qr" data-s="qr"><span class="ico">&#128241;</span><span class="lbl">QR Tags</span></a>
     <a class="nav" href="#/import" data-s="import"><span class="ico">&#11015;</span><span class="lbl">Import CSV</span></a>
     <a class="nav" href="#/settings" data-s="settings"><span class="ico">&#9881;</span><span class="lbl">Settings</span></a>
   </nav>
@@ -48,6 +50,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="assets/qr.js"></script>
 <script src="assets/db.js"></script>
 <script src="assets/sync.js"></script>
 <script src="assets/csv.js"></script>

@@ -1,8 +1,8 @@
 {
   "name": "techx-cmms",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Tech X — maintenance management (assets, PM, spare parts, work orders) with CSV import. Static, no build step.",
+  "description": "Tech X — maintenance management (assets, PM, spare parts, work orders) with CSV import and QR asset tags. Static, no build step.",
   "scripts": {
     "dev": "npx --yes serve . -l 3000",
     "start": "npx --yes serve . -l 3000"
